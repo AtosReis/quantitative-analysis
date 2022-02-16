@@ -47,22 +47,34 @@ test = df2['2020-01-01':'2020-01-31']
 # %%
 # Specify the parameters of the simulation (T, N, S_0, N_SIM, mu, sigma)
 
+# Forecasting horizon: number of days in the test set
 T = len(test)
+# Number of time increments in the forecasting horizon
 N = len(test)
+# Initial price: the last observation from the training set 
 S_0 = adj_close[train.index[-1]]
+#Number of simulated paths
 N_SIM = 300
+# Calculate the average and standard deviation of the returns from the training set to obtain the drift (mu)
 mu = train.mean()
+# And diffusion (sigma) coefficients
 sigma = train.std()
 # %%
 # Define the function for simulations 
 
 def simulate_gbm(s_0, mu, sigma, n_sims, T, N):
+# Defining the time increment (dt)    
  dt = T/N
+# Defining Brownian increments (dW) 
  dW = np.random.normal(scale = np.sqrt(dt),
+#  Matrix of increments (size: n_sims x N), where each row describes one sample path 
  size=(n_sims, N))
+# Calculate the Brownian paths (W) by running a cumulative sum (np.cumsum) over the rows 
  W = np.cumsum(dW, axis=1)
+# Create a matrix containing the time steps (time_steps)
  time_step = np.linspace(dt, T, N)
  time_steps = np.broadcast_to(time_step, (n_sims, N))
+# Insert the initial value into the first position of each row
  S_t = s_0 * np.exp((mu - 0.5 * sigma ** 2) * time_steps
  + sigma * W)
  S_t = np.insert(S_t, 0, s_0, axis=1)
@@ -81,6 +93,9 @@ PLOT_TITLE = (f'{stock} Simulation '
  f'({FIRST_TEST_DATE}:{LAST_TEST_DATE})')
 selected_indices = adj_close[LAST_TRAIN_DATE:LAST_TEST_DATE].index
 index = [date.date() for date in selected_indices]
+
+# Transposed the data and converted it into a pandas DataFrame, 
+# so that we had one path per column, which simplifies using the plot method
 gbm_simulations_df = pd.DataFrame(np.transpose(gbm_simulations),
  index=index)
 # %%
